@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "project": "kento-framework",
+  "status": "active",
+  "acceptedRisks": [],
+  "ignoredPaths": [],
+  "notes": [
+    "Monorepo de framework com runtimes Bun e Node, além de pacotes de router, parsing de body, CORS, compressão, helmet, logger e rate limiting."
+  ]
+}

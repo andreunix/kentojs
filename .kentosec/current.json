@@ -1,0 +1,26 @@
+{
+  "project": "kento-framework",
+  "currentScan": "scan-v0001-2026-04-09T18-10-18Z",
+  "previousScan": null,
+  "status": "active",
+  "summary": {
+    "open": 3,
+    "critical": 0,
+    "high": 3,
+    "medium": 0,
+    "low": 0,
+    "inProgress": 0,
+    "awaitingValidation": 0,
+    "regressed": 0,
+    "acceptedRisk": 0
+  },
+  "findingIds": [
+    "KSEC-2026-0001",
+    "KSEC-2026-0002",
+    "KSEC-2026-0003"
+  ],
+  "plans": [
+    "reports/patch-plan-scan-v0001-2026-04-09T18-10-18Z.md"
+  ],
+  "updatedAt": "2026-04-09"
+}

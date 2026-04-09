@@ -1,0 +1,9 @@
+{
+  "baselineScan": "scan-v0001-2026-04-09T18-10-18Z",
+  "createdAt": "2026-04-09",
+  "findingIds": [
+    "KSEC-2026-0001",
+    "KSEC-2026-0002",
+    "KSEC-2026-0003"
+  ]
+}
