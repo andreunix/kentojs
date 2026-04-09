@@ -2,6 +2,7 @@
     "name": "kento-framework",
     "version": "0.0.0",
     "private": true,
+    "type": "module",
     "workspaces": [
         "packages/*"
     ],
@@ -9,8 +10,16 @@
         "typecheck": "tsc --noEmit",
         "typecheck:all": "bun run --filter '*' typecheck",
         "test": "bun test",
-        "test:all": "bun run --filter '*' test",
+        "test:unit": "bun run --filter '*' test",
+        "test:contracts:bun": "bun test tests/contracts/bun",
+        "test:contracts:node": "node --experimental-strip-types --test tests/contracts/node",
+        "test:integration:bun": "bun test tests/integration/bun",
+        "test:integration:node": "node --experimental-strip-types --test tests/integration/node",
+        "test:all": "bun run test:unit && bun run test:contracts:bun && bun run test:contracts:node && bun run test:integration:bun && bun run test:integration:node",
         "example:hello": "bun run examples/hello-world.ts",
+        "example:fetch": "bun run examples/fetch-handler.ts",
+        "example:runtime:bun": "bun run examples/runtime-matrix/bun.ts",
+        "example:runtime:node": "node --experimental-strip-types examples/runtime-matrix/node.ts",
         "dev": "bun run --cwd packages/kento --watch src/index.ts",
         "build": "bun run --filter '*' build"
     },
@@ -19,6 +28,7 @@
     },
     "devDependencies": {
         "@types/bun": "latest",
+        "@types/node": "^24.5.2",
         "typescript": "^6.0.2"
     }
 }

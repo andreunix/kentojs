@@ -5,6 +5,7 @@ import Kento, {
   helmet,
   compress,
   rateLimit,
+  listenBun,
   loggerMiddleware,
 } from 'kento'
 import type { RouterContext } from 'kento'
@@ -36,6 +37,6 @@ router.post('/echo', (ctx: RouterContext) => {
 app.use(router.routes())
 app.use(router.allowedMethods())
 
-const server = app.listen(port)
+const server = listenBun(app, { port })
 
-console.log(`Kento running on http://localhost:${server.port}`)
+console.log(`Kento running on ${server.origin}`)

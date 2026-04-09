@@ -5,7 +5,11 @@
   "type": "module",
   "main": "src/index.ts",
   "module": "src/index.ts",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime-bun": "./src/runtime-bun.ts",
+    "./runtime-node": "./src/runtime-node.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
@@ -19,7 +23,9 @@
     "@kento/helmet": "workspace:*",
     "@kento/logger": "workspace:*",
     "@kento/ratelimit": "workspace:*",
-    "@kento/router": "workspace:*"
+    "@kento/router": "workspace:*",
+    "@kento/runtime-bun": "workspace:*",
+    "@kento/runtime-node": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest",
