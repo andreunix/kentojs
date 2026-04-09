@@ -205,3 +205,70 @@ describe('Security: Body Parser Limits', () => {
     expect(res.status).toBe(413)
   })
 })
+
+describe('Security: KSEC-2026-0002 — Open redirect via protocol-relative URLs', () => {
+  function tryRedirect(app: Application, url: string) {
+    return request(app, '/', { redirect: 'manual' })
+  }
+
+  it('should block // protocol-relative redirect', async () => {
+    const app = createApp()
+    app.use(async (ctx) => {
+      try {
+        ctx.redirect('//evil.example/path')
+        ctx.body = 'should not reach'
+      } catch {
+        ctx.status = 400
+        ctx.body = 'blocked'
+      }
+    })
+    const res = await tryRedirect(app, '//evil.example/path')
+    expect(res.status).toBe(400)
+  })
+
+  it('should block backslash-based redirect \\/', async () => {
+    const app = createApp()
+    app.use(async (ctx) => {
+      try {
+        ctx.redirect('\\/evil.example/path')
+        ctx.body = 'should not reach'
+      } catch {
+        ctx.status = 400
+        ctx.body = 'blocked'
+      }
+    })
+    const res = await tryRedirect(app, '\\/evil.example')
+    expect(res.status).toBe(400)
+  })
+
+  it('should block bare backslash redirect', async () => {
+    const app = createApp()
+    app.use(async (ctx) => {
+      try {
+        ctx.redirect('\\evil.example/path')
+        ctx.body = 'should not reach'
+      } catch {
+        ctx.status = 400
+        ctx.body = 'blocked'
+      }
+    })
+    const res = await tryRedirect(app, '\\evil.example')
+    expect(res.status).toBe(400)
+  })
+
+  it('should still allow valid relative path redirects', async () => {
+    const app = createApp()
+    app.use(async (ctx) => { ctx.redirect('/safe/path') })
+    const res = await tryRedirect(app, '/safe/path')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('location')).toBe('/safe/path')
+  })
+
+  it('should still allow explicit https:// redirects', async () => {
+    const app = createApp()
+    app.use(async (ctx) => { ctx.redirect('https://trusted.example.com/path') })
+    const res = await tryRedirect(app, 'https://trusted.example.com/path')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('location')).toContain('trusted.example.com')
+  })
+})

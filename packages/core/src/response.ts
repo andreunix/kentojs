@@ -132,7 +132,14 @@ const response: Record<string, unknown> = {
 
   redirect(url: string) {
     const self = this as any
-    // Prevent redirects to dangerous schemes (javascript:, data:, vbscript:)
+
+    // Reject protocol-relative URLs (//host, \\/host, \\host) and bare backslash-based forms
+    // that browsers resolve as external redirects.
+    if (/^\/\/|^\\/.test(url)) {
+      throw new Error(`Unsafe redirect URL: protocol-relative or backslash-relative URLs are not allowed`)
+    }
+
+    // Reject non-http(s) schemes (javascript:, data:, vbscript:, …)
     if (url && !url.startsWith('/') && !url.startsWith('.')) {
       if (/^https?:\/\//i.test(url)) {
         url = new URL(url).toString()
@@ -140,6 +147,7 @@ const response: Record<string, unknown> = {
         throw new Error(`Unsafe redirect URL scheme: ${url.split(':')[0]}`)
       }
     }
+
     self.set('Location', encodeUrl(url))
     if (!REDIRECT_STATUSES.has(self.status)) self.status = 302
     if (self.ctx.accepts('html')) {
