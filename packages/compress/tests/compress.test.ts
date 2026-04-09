@@ -1,18 +1,19 @@
-import { describe, it, expect, afterEach } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { Application } from '@kento/core'
 import { compress } from '../src/compress'
-
-let servers: any[] = []
 
 function createApp() { return new Application({ silent: true }) }
 
 async function request(app: Application, path = '/', opts: RequestInit = {}): Promise<Response> {
-  const server = app.listen(0)
-  servers.push(server)
-  return fetch(`http://localhost:${server.port}${path}`, opts)
-}
+  const handle = app.callback()
+  const server = {
+    requestIP() {
+      return { address: '127.0.0.1' }
+    }
+  } as any
 
-afterEach(() => { for (const s of servers) s.stop(); servers = [] })
+  return handle(new Request(`http://localhost${path}`, opts), server)
+}
 
 describe('compress middleware', () => {
   it('should compress text responses with gzip', async () => {
@@ -37,6 +38,18 @@ describe('compress middleware', () => {
     })
     const res = await request(app, '/', {
       headers: { 'Accept-Encoding': 'gzip' }
+    })
+    expect(res.headers.get('content-encoding')).toBe('gzip')
+  })
+
+  it('should fall back to gzip when br is preferred', async () => {
+    const app = createApp()
+    app.use(compress({ threshold: 0 }))
+    app.use(async (ctx) => {
+      ctx.body = { data: 'x'.repeat(2000) }
+    })
+    const res = await request(app, '/', {
+      headers: { 'Accept-Encoding': 'br, gzip' }
     })
     expect(res.headers.get('content-encoding')).toBe('gzip')
   })

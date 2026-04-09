@@ -19,10 +19,13 @@ function getBodyBytes(body: unknown): Uint8Array | null {
   return null
 }
 
+function normalizeBytes(bytes: Uint8Array): Uint8Array<ArrayBufferLike> {
+  return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+}
+
 export function compress(options: CompressOptions = {}): Middleware {
   const filter = options.filter ?? isCompressible
   const threshold = parseBytes(options.threshold ?? DEFAULT_THRESHOLD)
-  const brEnabled = options.br !== false
   const gzipEnabled = options.gzip !== false
   const deflateEnabled = options.deflate !== false
 
@@ -48,7 +51,6 @@ export function compress(options: CompressOptions = {}): Middleware {
     // Content negotiation for encoding
     const acceptEncoding = (ctx as any).request.get('Accept-Encoding')
     const available: string[] = []
-    if (brEnabled) available.push('br')
     if (gzipEnabled) available.push('gzip')
     if (deflateEnabled) available.push('deflate')
     available.push('identity')
@@ -56,8 +58,6 @@ export function compress(options: CompressOptions = {}): Middleware {
     const encoding = acceptsEncodings(acceptEncoding, ...available)
     if (!encoding || encoding === 'identity') return
 
-    ctx.set('Content-Encoding', encoding as string)
-    ctx.remove('Content-Length')
     ctx.vary('Accept-Encoding')
 
     // Use Bun's native compression for buffer/string bodies
@@ -65,25 +65,16 @@ export function compress(options: CompressOptions = {}): Middleware {
       let compressed: Uint8Array<ArrayBuffer>
       switch (encoding) {
         case 'gzip':
-          compressed = Bun.gzipSync(new Uint8Array(bytes.buffer) as Uint8Array<ArrayBuffer>)
+          compressed = Bun.gzipSync(normalizeBytes(bytes) as Uint8Array<ArrayBuffer>)
           break
         case 'deflate':
-          compressed = Bun.deflateSync(new Uint8Array(bytes.buffer) as Uint8Array<ArrayBuffer>)
-          break
-        case 'br':
-          // Bun doesn't have brotli sync, use CompressionStream
-          {
-            const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'))
-            compressed = new Uint8Array(await new Response(stream).arrayBuffer())
-            // Actually, try gzip as fallback if br isn't available
-            // Bun supports CompressionStream with 'gzip' and 'deflate'
-            // For brotli, we fall back to gzip
-            ctx.set('Content-Encoding', 'deflate')
-          }
+          compressed = Bun.deflateSync(normalizeBytes(bytes) as Uint8Array<ArrayBuffer>)
           break
         default:
           return
       }
+      ctx.set('Content-Encoding', encoding as string)
+      ctx.remove('Content-Length')
       ;(ctx as any).body = Buffer.from(compressed)
       ctx.set('Content-Length', String(compressed.length))
       return
@@ -92,13 +83,9 @@ export function compress(options: CompressOptions = {}): Middleware {
     // For streaming/blob bodies, use web CompressionStream
     if (body instanceof ReadableStream || body instanceof Blob) {
       const sourceStream = body instanceof Blob ? body.stream() : body
-      const format = encoding === 'gzip' ? 'gzip' : 'deflate'
-      if (encoding === 'br') {
-        // CompressionStream doesn't support brotli in all runtimes
-        // Fall back to gzip
-        ctx.set('Content-Encoding', 'gzip')
-      }
-      const compressed = sourceStream.pipeThrough(new CompressionStream(format))
+      const compressed = sourceStream.pipeThrough(new CompressionStream(encoding as 'gzip' | 'deflate'))
+      ctx.set('Content-Encoding', encoding as string)
+      ctx.remove('Content-Length')
       ;(ctx as any).body = compressed
       return
     }
@@ -119,6 +106,8 @@ export function compress(options: CompressOptions = {}): Middleware {
         default:
           return
       }
+      ctx.set('Content-Encoding', encoding as string)
+      ctx.remove('Content-Length')
       ;(ctx as any).body = Buffer.from(compressed)
       ctx.set('Content-Length', String(compressed.length))
     }
