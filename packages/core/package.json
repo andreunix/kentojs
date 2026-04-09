@@ -1,0 +1,20 @@
+{
+  "name": "@kento/core",
+  "version": "0.1.0",
+  "description": "Core framework primitives for Kento — Bun first, zero external deps",
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./src/utils": "./src/utils.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^6.0.2"
+  }
+}

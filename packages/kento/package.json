@@ -1,0 +1,28 @@
+{
+  "name": "kento",
+  "version": "0.1.0",
+  "description": "Kento – a Koa-like framework for Bun, zero external deps",
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "dev": "bun run --watch src/index.ts"
+  },
+  "dependencies": {
+    "@kento/bodyparser": "workspace:*",
+    "@kento/compress": "workspace:*",
+    "@kento/core": "workspace:*",
+    "@kento/cors": "workspace:*",
+    "@kento/helmet": "workspace:*",
+    "@kento/logger": "workspace:*",
+    "@kento/ratelimit": "workspace:*",
+    "@kento/router": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^6.0.2"
+  }
+}

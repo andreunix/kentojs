@@ -1,0 +1,20 @@
+{
+  "name": "@kento/logger",
+  "version": "0.1.0",
+  "description": "Structured logger for Kento — zero external deps, Pino-inspired",
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@kento/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^6.0.2"
+  }
+}

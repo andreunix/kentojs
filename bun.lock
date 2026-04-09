@@ -1,0 +1,145 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "kento-framework",
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/bodyparser": {
+      "name": "@kento/bodyparser",
+      "version": "0.1.0",
+      "dependencies": {
+        "@kento/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/compress": {
+      "name": "@kento/compress",
+      "version": "0.1.0",
+      "dependencies": {
+        "@kento/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/core": {
+      "name": "@kento/core",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/cors": {
+      "name": "@kento/cors",
+      "version": "0.1.0",
+      "dependencies": {
+        "@kento/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/helmet": {
+      "name": "@kento/helmet",
+      "version": "0.1.0",
+      "dependencies": {
+        "@kento/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/kento": {
+      "name": "kento",
+      "version": "0.1.0",
+      "dependencies": {
+        "@kento/bodyparser": "workspace:*",
+        "@kento/compress": "workspace:*",
+        "@kento/core": "workspace:*",
+        "@kento/cors": "workspace:*",
+        "@kento/helmet": "workspace:*",
+        "@kento/logger": "workspace:*",
+        "@kento/ratelimit": "workspace:*",
+        "@kento/router": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/logger": {
+      "name": "@kento/logger",
+      "version": "0.1.0",
+      "dependencies": {
+        "@kento/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/ratelimit": {
+      "name": "@kento/ratelimit",
+      "version": "0.1.0",
+      "dependencies": {
+        "@kento/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/router": {
+      "name": "@kento/router",
+      "version": "0.1.0",
+      "dependencies": {
+        "@kento/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^6.0.2",
+      },
+    },
+  },
+  "packages": {
+    "@kento/bodyparser": ["@kento/bodyparser@workspace:packages/bodyparser"],
+
+    "@kento/compress": ["@kento/compress@workspace:packages/compress"],
+
+    "@kento/core": ["@kento/core@workspace:packages/core"],
+
+    "@kento/cors": ["@kento/cors@workspace:packages/cors"],
+
+    "@kento/helmet": ["@kento/helmet@workspace:packages/helmet"],
+
+    "@kento/logger": ["@kento/logger@workspace:packages/logger"],
+
+    "@kento/ratelimit": ["@kento/ratelimit@workspace:packages/ratelimit"],
+
+    "@kento/router": ["@kento/router@workspace:packages/router"],
+
+    "@types/bun": ["@types/bun@1.3.11", "", { "dependencies": { "bun-types": "1.3.11" } }, "sha512-5vPne5QvtpjGpsGYXiFyycfpDF2ECyPcTSsFBMa0fraoxiQyMJ3SmuQIGhzPg2WJuWxVBoxWJ2kClYTcw/4fAg=="],
+
+    "@types/node": ["@types/node@25.5.2", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-tO4ZIRKNC+MDWV4qKVZe3Ql/woTnmHDr5JD8UI5hn2pwBrHEwOEMZK7WlNb5RKB6EoJ02gwmQS9OrjuFnZYdpg=="],
+
+    "bun-types": ["bun-types@1.3.11", "", { "dependencies": { "@types/node": "*" } }, "sha512-1KGPpoxQWl9f6wcZh57LvrPIInQMn2TQ7jsgxqpRzg+l0QPOFvJVH7HmvHo/AiPgwXy+/Thf6Ov3EdVn1vOabg=="],
+
+    "kento": ["kento@workspace:packages/kento"],
+
+    "typescript": ["typescript@6.0.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ=="],
+
+    "undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
+  }
+}
