@@ -1,9 +1,19 @@
-import Kento, { Router, cors, bodyParser, helmet, compress, rateLimit, loggerMiddleware } from './src/index'
-import type { RouterContext } from '@kento/router'
+import Kento, {
+  Router,
+  cors,
+  bodyParser,
+  helmet,
+  compress,
+  rateLimit,
+  loggerMiddleware,
+} from 'kento'
+import type { RouterContext } from 'kento'
 
+const port = Number(process.env.PORT ?? 3000)
 const app = new Kento({ proxy: true })
 const router = new Router()
-const logger = Kento.createLogger({ level: 'info' })
+const logger = Kento.createLogger({ level: 'debug' })
+
 app.use(helmet())
 app.use(cors({ origin: '*' }))
 app.use(compress({ threshold: 512 }))
@@ -26,5 +36,6 @@ router.post('/echo', (ctx: RouterContext) => {
 app.use(router.routes())
 app.use(router.allowedMethods())
 
-const server = app.listen(3000)
+const server = app.listen(port)
+
 console.log(`Kento running on http://localhost:${server.port}`)

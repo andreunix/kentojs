@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "kento-framework",
+      "dependencies": {
+        "kento": "workspace:*",
+      },
       "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^6.0.2",

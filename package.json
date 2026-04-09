@@ -10,8 +10,12 @@
         "typecheck:all": "bun run --filter '*' typecheck",
         "test": "bun test",
         "test:all": "bun run --filter '*' test",
+        "example:hello": "bun run examples/hello-world.ts",
         "dev": "bun run --cwd packages/kento --watch src/index.ts",
         "build": "bun run --filter '*' build"
+    },
+    "dependencies": {
+        "kento": "workspace:*"
     },
     "devDependencies": {
         "@types/bun": "latest",
