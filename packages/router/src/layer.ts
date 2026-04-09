@@ -1,5 +1,5 @@
-import { pathToRegexp, compile, parse } from './path'
-import type { PathKey } from './path'
+import { pathToRegexp, compile, parse } from './path.ts'
+import type { PathKey } from './path.ts'
 import type {
   LayerOptions,
   RouterMiddleware,
@@ -8,7 +8,7 @@ import type {
   DefaultContext,
   RouterContext,
   Next
-} from './types'
+} from './types.ts'
 
 type ParameterMiddleware<S = DefaultState, C = DefaultContext> = RouterMiddleware<S, C> & {
   param?: string

@@ -7,9 +7,14 @@ let servers: any[] = []
 function createApp() { return new Application({ silent: true }) }
 
 async function request(app: Application, path = '/', opts: RequestInit = {}): Promise<Response> {
-  const server = app.listen(0)
-  servers.push(server)
-  return fetch(`http://localhost:${server.port}${path}`, opts)
+  const handle = app.callback()
+  const server = {
+    requestIP() {
+      return { address: '127.0.0.1' }
+    }
+  } as any
+
+  return handle(new Request(`http://localhost${path}`, opts), server)
 }
 
 afterEach(() => { for (const s of servers) s.stop(); servers = [] })

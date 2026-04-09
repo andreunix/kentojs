@@ -1,9 +1,29 @@
 import net from 'node:net'
 import {
   isFresh, acceptsTypes, acceptsEncodings, acceptsCharsets, acceptsLanguages, typeIs
-} from './utils'
+} from './utils.ts'
+import type { KentoClientAddress } from './types.ts'
 
 const IP = Symbol('context#ip')
+
+function parseQueryString(str: string): Record<string, string | string[]> {
+  const params = new URLSearchParams(str)
+  const query: Record<string, string | string[]> = {}
+
+  for (const key of params.keys()) {
+    const values = params.getAll(key)
+    query[key] = values.length <= 1 ? (values[0] ?? '') : values
+  }
+
+  return query
+}
+
+function resolveClientAddress(clientAddress: unknown): string {
+  if (!clientAddress) return ''
+  if (typeof clientAddress === 'string') return clientAddress
+  const address = (clientAddress as KentoClientAddress).address
+  return typeof address === 'string' ? address : ''
+}
 
 const request: Record<string, unknown> = {
   get header(): Record<string, string> {
@@ -48,14 +68,24 @@ const request: Record<string, unknown> = {
     self.url = path + search
   },
 
-  get query(): Record<string, string> {
+  get query(): Record<string, string | string[]> {
     const str = (this as any).querystring
-    const c: Record<string, Record<string, string>> = (this as any)._querycache ??= {}
-    return c[str] ??= Object.fromEntries(new URLSearchParams(str))
+    const c: Record<string, Record<string, string | string[]>> = (this as any)._querycache ??= {}
+    return c[str] ??= parseQueryString(str)
   },
 
-  set query(obj: Record<string, string>) {
-    (this as any).querystring = new URLSearchParams(obj).toString()
+  set query(obj: Record<string, string | string[]>) {
+    const params = new URLSearchParams()
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (Array.isArray(value)) {
+        for (const item of value) params.append(key, item)
+      } else {
+        params.append(key, value)
+      }
+    }
+
+    ;(this as any).querystring = params.toString()
   },
 
   get querystring(): string {
@@ -184,9 +214,7 @@ const request: Record<string, unknown> = {
       if (self.ips.length > 0) {
         self[IP as any] = self.ips[0]
       } else {
-        // Use Bun server.requestIP()
-        const addr = self._server?.requestIP?.(self.req)
-        self[IP as any] = addr?.address ?? ''
+        self[IP as any] = resolveClientAddress(self.ctx.platform?.clientAddress)
       }
     }
     return self[IP as any]

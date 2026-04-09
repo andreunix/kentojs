@@ -1,6 +1,6 @@
 import { compose, HttpError } from '@kento/core'
 import type { Middleware, ParameterizedContext } from '@kento/core'
-import Layer from './layer'
+import Layer from './layer.ts'
 import type {
   RouterOptions,
   LayerOptions,
@@ -8,7 +8,7 @@ import type {
   RouterParameterMiddleware,
   RouterContext,
   Next
-} from './types'
+} from './types.ts'
 
 const HTTP_METHODS = ['HEAD', 'OPTIONS', 'GET', 'PUT', 'PATCH', 'POST', 'DELETE']
 
@@ -145,15 +145,20 @@ export class Router<S = object, C = object> {
       if ((mw as any).router) {
         const nested: Router<S, C> = (mw as any).router
         for (const nestedLayer of nested.stack) {
-          const cloned = Object.assign(Object.create(Layer.prototype), nestedLayer) as Layer<S, C>
+          const cloned = Object.assign(Object.create(Layer.prototype), nestedLayer, {
+            stack: [...nestedLayer.stack],
+            methods: [...nestedLayer.methods],
+            paramNames: [...nestedLayer.paramNames],
+            opts: { ...nestedLayer.opts }
+          }) as Layer<S, C>
           if (paths.length) {
             for (const p of paths) cloned.setPrefix(p)
           }
           if (this.opts.prefix) cloned.setPrefix(this.opts.prefix)
+          for (const [name, handler] of Object.entries(this.params)) {
+            cloned.param(name, handler as RouterParameterMiddleware<S, C>)
+          }
           this.stack.push(cloned)
-        }
-        for (const [name, handler] of Object.entries(this.params)) {
-          nested.param(name, handler as RouterParameterMiddleware<S, C>)
         }
       } else {
         const layer = new Layer<S, C>(

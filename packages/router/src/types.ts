@@ -27,7 +27,7 @@ export type RouterMiddleware<S = DefaultState, C = DefaultContext> = (
 export type RouterContext<S = DefaultState, C = DefaultContext> = ParameterizedContext<S, C> & {
   params: Record<string, string>
   captures: string[]
-  router: import('./router').Router<S, C>
+  router: import('./router.ts').Router<S, C>
   routerPath: string
   routerName?: string
   _matchedRoute?: string | RegExp

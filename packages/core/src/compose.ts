@@ -1,4 +1,4 @@
-import type { Middleware, Next, ParameterizedContext } from './types'
+import type { Middleware, Next, ParameterizedContext } from './types.ts'
 
 export function compose<S = object, C = object>(
   middleware: Middleware<S, C>[]

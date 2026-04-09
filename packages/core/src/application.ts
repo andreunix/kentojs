@@ -1,11 +1,34 @@
 import { EventEmitter } from 'node:events'
-type BunServer = import('bun').Server<unknown>
-import { compose } from './compose'
-import context from './context'
-import request from './request'
-import response from './response'
-import { STATUS_CODES, EMPTY_STATUSES, HttpError } from './utils'
-import type { Middleware, KentoOptions, ParameterizedContext, DefaultState, DefaultContext } from './types'
+import { compose } from './compose.ts'
+import context from './context.ts'
+import request from './request.ts'
+import response from './response.ts'
+import { STATUS_CODES, EMPTY_STATUSES, HttpError } from './utils.ts'
+import type {
+  Middleware,
+  KentoOptions,
+  ParameterizedContext,
+  DefaultState,
+  DefaultContext,
+  KentoPlatform,
+} from './types.ts'
+
+type LegacyRuntimeLike = {
+  requestIP?: (req: Request) => { address?: string } | undefined
+}
+
+function normalizePlatform(req: Request, platform?: KentoPlatform | LegacyRuntimeLike): KentoPlatform {
+  if (!platform) return {}
+
+  const normalized = { ...(platform as Record<string, unknown>) } as KentoPlatform
+  const legacy = platform as LegacyRuntimeLike
+
+  if (!normalized.clientAddress && typeof legacy.requestIP === 'function') {
+    normalized.clientAddress = legacy.requestIP(req)?.address ?? ''
+  }
+
+  return normalized
+}
 
 export class Application<
   S extends DefaultState = DefaultState,
@@ -22,7 +45,6 @@ export class Application<
   context: Record<string, unknown>
   request: Record<string, unknown>
   response: Record<string, unknown>
-  server?: BunServer
 
   static HttpError = HttpError
 
@@ -41,34 +63,6 @@ export class Application<
     this.response = Object.create(response)
   }
 
-  listen(
-    port?: number | { port?: number; hostname?: string; reusePort?: boolean },
-    callback?: () => void
-  ): BunServer {
-    const opts = typeof port === 'number' ? { port } : (port ?? {})
-    const fn = compose(this.middleware)
-
-    if (!this.listenerCount('error')) this.on('error', this.onerror.bind(this))
-
-    const app = this
-    this.server = Bun.serve({
-      port: opts.port ?? 3000,
-      hostname: opts.hostname,
-      reusePort: opts.reusePort,
-      fetch(req: Request, server: BunServer): Response | Promise<Response> {
-        const ctx = app.createContext(req, server)
-        return app.handleRequest(ctx, fn)
-      }
-    })
-
-    if (callback) callback()
-    return this.server
-  }
-
-  close(): void {
-    this.server?.stop()
-  }
-
   toJSON() {
     return { subdomainOffset: this.subdomainOffset, proxy: this.proxy, env: this.env }
   }
@@ -81,14 +75,16 @@ export class Application<
     return this
   }
 
-  callback(): (req: Request, server: BunServer) => Response | Promise<Response> {
+  callback(): (req: Request, platform?: KentoPlatform | LegacyRuntimeLike) => Promise<Response> {
+    return this.fetch.bind(this)
+  }
+
+  async fetch(req: Request, platform?: KentoPlatform | LegacyRuntimeLike): Promise<Response> {
     const fn = compose(this.middleware)
     if (!this.listenerCount('error')) this.on('error', this.onerror.bind(this))
 
-    return (req: Request, server: BunServer) => {
-      const ctx = this.createContext(req, server)
-      return this.handleRequest(ctx, fn)
-    }
+    const ctx = this.createContext(req, platform)
+    return this.handleRequest(ctx, fn)
   }
 
   async handleRequest(
@@ -105,22 +101,22 @@ export class Application<
 
   createContext(
     req: Request,
-    server: BunServer
+    platform?: KentoPlatform | LegacyRuntimeLike
   ): ParameterizedContext<S, C> {
     const ctx = Object.create(this.context) as ParameterizedContext<S, C>
     const reqObj = Object.create(this.request)
     const resObj = Object.create(this.response)
+    const normalizedPlatform = normalizePlatform(req, platform)
 
     ;(ctx as any).request = reqObj
     ;(ctx as any).response = resObj
     ;(ctx as any).app = reqObj.app = resObj.app = this
     ;(ctx as any).req = reqObj.req = req
-    ;(ctx as any)._server = reqObj._server = server
+    ;(ctx as any).platform = normalizedPlatform
     reqObj.ctx = resObj.ctx = ctx
     reqObj.response = resObj
     resObj.request = reqObj
 
-    // Parse URL from Bun Request
     const parsed = new URL(req.url)
     const urlPath = parsed.pathname + parsed.search
     ;(ctx as any).originalUrl = reqObj.originalUrl = urlPath
@@ -189,8 +185,8 @@ function respond(ctx: ParameterizedContext): Response {
   }
 
   if (typeof body === 'string') return new Response(body, { status, headers })
-  if (Buffer.isBuffer(body)) return new Response(body, { status, headers })
-  if (body instanceof Uint8Array) return new Response(body, { status, headers })
+  if (Buffer.isBuffer(body)) return new Response(body as BodyInit, { status, headers })
+  if (body instanceof Uint8Array) return new Response(body as BodyInit, { status, headers })
   if (body instanceof ArrayBuffer) return new Response(body, { status, headers })
   if (body instanceof Blob) return new Response(body, { status, headers })
   if (body instanceof ReadableStream) return new Response(body, { status, headers })
@@ -199,7 +195,7 @@ function respond(ctx: ParameterizedContext): Response {
     // Merge our headers into the Response
     const merged = new Headers(body.headers)
     headers.forEach((v, k) => merged.set(k, v))
-    return new Response(body.body, { status: body.status, headers: merged })
+    return new Response(body.body, { status, headers: merged })
   }
 
   // JSON

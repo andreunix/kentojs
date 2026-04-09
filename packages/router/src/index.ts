@@ -1,9 +1,9 @@
-export { Router } from './router'
-export { Layer } from './layer'
+export { Router } from './router.ts'
+export { Layer } from './layer.ts'
 export type {
   RouterOptions,
   LayerOptions,
   RouterMiddleware,
   RouterParameterMiddleware,
   RouterContext,
-} from './types'
+} from './types.ts'

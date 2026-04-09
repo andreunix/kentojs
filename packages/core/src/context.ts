@@ -1,4 +1,4 @@
-import { STATUS_CODES, HttpError, createHttpError, parseCookies } from './utils'
+import { STATUS_CODES, createHttpError, parseCookies } from './utils.ts'
 
 const COOKIES = Symbol('context#cookies')
 
@@ -10,7 +10,8 @@ const context: Record<string, unknown> = {
       response: self.response.toJSON(),
       app: self.app.toJSON(),
       originalUrl: self.originalUrl,
-      req: '<original bun request>',
+      platform: self.platform,
+      req: '<original request>',
     }
   },
 
@@ -48,6 +49,7 @@ const context: Record<string, unknown> = {
     ;(err as any).status = statusCode
     self._status = statusCode
     self.response._status = statusCode
+    self.response._headers = new Headers()
 
     // Set error headers if present
     if ((err as any).headers) {

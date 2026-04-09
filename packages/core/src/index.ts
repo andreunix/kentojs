@@ -1,12 +1,24 @@
-export { Application } from './application'
-export { compose } from './compose'
-export { default as request } from './request'
-export { default as response } from './response'
-export { default as context } from './context'
-export { HttpError } from './utils'
+export { Application } from './application.ts'
+export { compose } from './compose.ts'
+export { default as request } from './request.ts'
+export { default as response } from './response.ts'
+export { default as context } from './context.ts'
+export {
+  HttpError,
+  acceptsEncodings,
+  contentType,
+  formatMs,
+  isCompressible,
+  parseBytes,
+  parseCookies,
+  serializeCookie,
+  varyAppend,
+} from './utils.ts'
 
 export type {
   KentoOptions,
+  KentoPlatform,
+  KentoClientAddress,
   KentoContext,
   KentoRequest,
   KentoResponse,
@@ -15,4 +27,4 @@ export type {
   DefaultState,
   DefaultContext,
   ParameterizedContext,
-} from './types'
+} from './types.ts'

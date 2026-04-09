@@ -1,6 +1,3 @@
-import type { Server } from 'bun'
-type BunServer = Server<unknown>
-
 export interface KentoOptions {
   env?: string
   keys?: string[]
@@ -21,8 +18,20 @@ export type Middleware<S = DefaultState, C = DefaultContext> = (
 export interface DefaultState {}
 export interface DefaultContext {}
 
+export interface KentoClientAddress {
+  address: string
+  port?: number
+}
+
+export interface KentoPlatform {
+  name?: string
+  clientAddress?: string | KentoClientAddress | null
+  waitUntil?: (promise: Promise<unknown>) => void
+  env?: Record<string, unknown>
+}
+
 export interface KentoRequest {
-  app: import('./application').Application
+  app: import('./application.ts').Application
   req: Request
   ctx: KentoContext
   response: KentoResponse
@@ -34,7 +43,7 @@ export interface KentoRequest {
   href: string
   method: string
   path: string
-  query: Record<string, string>
+  query: Record<string, string | string[]>
   querystring: string
   search: string
   host: string
@@ -62,7 +71,7 @@ export interface KentoRequest {
 }
 
 export interface KentoResponse {
-  app: import('./application').Application
+  app: import('./application.ts').Application
   req: Request
   ctx: KentoContext
   request: KentoRequest
@@ -92,9 +101,9 @@ export interface KentoResponse {
 }
 
 export interface KentoContext<S = DefaultState, C = DefaultContext> {
-  app: import('./application').Application
+  app: import('./application.ts').Application
   req: Request
-  _server: BunServer
+  platform: KentoPlatform
   request: KentoRequest
   response: KentoResponse
   originalUrl: string
@@ -107,7 +116,7 @@ export interface KentoContext<S = DefaultState, C = DefaultContext> {
   href: string
   method: string
   path: string
-  query: Record<string, string>
+  query: Record<string, string | string[]>
   querystring: string
   search: string
   host: string

@@ -8,10 +8,14 @@ function createApp() {
 }
 
 async function request(app: Application, path = '/', opts: RequestInit = {}): Promise<Response> {
-  const server = app.listen(0)
-  servers.push(server)
-  const url = `http://localhost:${server.port}${path}`
-  return fetch(url, opts)
+  const handle = app.callback()
+  const server = {
+    requestIP() {
+      return { address: '127.0.0.1' }
+    }
+  } as any
+
+  return handle(new Request(`http://localhost${path}`, opts), server)
 }
 
 afterEach(() => {
@@ -96,6 +100,19 @@ describe('Application', () => {
     expect(res.status).toBe(500)
   })
 
+  it('should clear stale headers when handling errors', async () => {
+    const app = createApp()
+    app.use(async (ctx) => {
+      ctx.set('ETag', 'abc')
+      ctx.set('Content-Encoding', 'gzip')
+      throw new Error('boom')
+    })
+    const res = await request(app)
+    expect(res.status).toBe(500)
+    expect(res.headers.get('etag')).toBeNull()
+    expect(res.headers.get('content-encoding')).toBeNull()
+  })
+
   it('should handle HttpError with status', async () => {
     const app = createApp()
     app.use(async (ctx) => { ctx.throw(400, 'Bad Request') })
@@ -167,19 +184,33 @@ describe('Application', () => {
     expect(result).toBe(app)
   })
 
+  it('should expose app.fetch as the portable entrypoint', async () => {
+    const app = createApp()
+    app.use(async (ctx) => { ctx.body = 'portable' })
+    const res = await app.fetch(new Request('http://localhost/portable'))
+    expect(await res.text()).toBe('portable')
+  })
+
   it('should throw on non-function middleware', () => {
     const app = createApp()
     expect(() => app.use('not a function' as any)).toThrow('function')
   })
 
-  it('should support close()', async () => {
+  it('should prefer ctx.status over Response body status', async () => {
     const app = createApp()
-    app.use(async (ctx) => { ctx.body = 'ok' })
-    const server = app.listen(0)
-    const port = server.port
-    const res = await fetch(`http://localhost:${port}/`)
-    expect(res.status).toBe(200)
-    app.close()
+    app.use(async (ctx) => {
+      ctx.body = new Response('ok', {
+        status: 202,
+        headers: { 'X-Upstream': '1' }
+      })
+      ctx.status = 201
+      ctx.set('X-App', '1')
+    })
+    const res = await request(app)
+    expect(res.status).toBe(201)
+    expect(res.headers.get('x-upstream')).toBe('1')
+    expect(res.headers.get('x-app')).toBe('1')
+    expect(await res.text()).toBe('ok')
   })
 })
 
@@ -206,6 +237,14 @@ describe('Application context', () => {
     expect(json).toEqual({ foo: 'bar', baz: 'qux' })
   })
 
+  it('should preserve repeated query params as arrays', async () => {
+    const app = createApp()
+    app.use(async (ctx) => { ctx.body = ctx.query })
+    const res = await request(app, '/?a=1&a=2&b=3')
+    const json = await res.json()
+    expect(json).toEqual({ a: ['1', '2'], b: '3' })
+  })
+
   it('should provide hostname', async () => {
     const app = createApp()
     app.use(async (ctx) => { ctx.body = ctx.hostname })
@@ -230,6 +269,26 @@ describe('Application context', () => {
     const res = await request(app)
     const text = await res.text()
     expect(text).toBeTruthy()
+  })
+
+  it('should resolve client address from platform', async () => {
+    const app = createApp()
+    app.use(async (ctx) => { ctx.body = ctx.ip })
+    const res = await app.fetch(new Request('http://localhost/ip'), {
+      clientAddress: { address: '10.0.0.8', port: 1234 }
+    })
+    expect(await res.text()).toBe('10.0.0.8')
+  })
+
+  it('should expose platform env on context', async () => {
+    const app = createApp()
+    app.use(async (ctx) => {
+      ctx.body = { runtime: ctx.platform.env?.RUNTIME }
+    })
+    const res = await app.fetch(new Request('http://localhost/env'), {
+      env: { RUNTIME: 'bun' }
+    })
+    expect(await res.json()).toEqual({ runtime: 'bun' })
   })
 
   it('should support ctx.assert', async () => {

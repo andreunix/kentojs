@@ -3,7 +3,7 @@ import {
   STATUS_CODES, EMPTY_STATUSES, REDIRECT_STATUSES,
   escapeHtml, encodeUrl, varyAppend, contentType as resolveContentType, typeIs,
   formatContentDisposition
-} from './utils'
+} from './utils.ts'
 
 const response: Record<string, unknown> = {
   get header(): Record<string, string> {

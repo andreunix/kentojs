@@ -1,24 +1,22 @@
-import { describe, it, expect, afterEach } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { Application } from '@kento/core'
 import { Router } from '../src/router'
 import type { RouterContext } from '../src/types'
-
-let servers: any[] = []
 
 function createApp() {
   return new Application({ silent: true })
 }
 
 async function request(app: Application, path = '/', opts: RequestInit = {}): Promise<Response> {
-  const server = app.listen(0)
-  servers.push(server)
-  return fetch(`http://localhost:${server.port}${path}`, opts)
-}
+  const handle = app.callback()
+  const server = {
+    requestIP() {
+      return { address: '127.0.0.1' }
+    }
+  } as any
 
-afterEach(() => {
-  for (const s of servers) s.stop()
-  servers = []
-})
+  return handle(new Request(`http://localhost${path}`, opts), server)
+}
 
 describe('Router', () => {
   it('should route GET requests', async () => {
@@ -178,5 +176,29 @@ describe('Router', () => {
     app.use(router.routes())
     const res = await request(app, '/users/42')
     expect(await res.json()).toEqual({ userId: 42 })
+  })
+
+  it('should apply parent param middleware to nested routers', async () => {
+    const app = createApp()
+    const parent = new Router()
+    const child = new Router()
+
+    parent.param('userId', async (id: string, ctx: RouterContext, next: any) => {
+      ctx.state.userId = parseInt(id)
+      await next()
+    })
+
+    child.get('/posts', async (ctx: RouterContext) => {
+      ctx.body = { userId: ctx.state.userId, params: ctx.params }
+    })
+
+    parent.use('/users/:userId', child.routes())
+    app.use(parent.routes())
+
+    const res = await request(app, '/users/42/posts')
+    expect(await res.json()).toEqual({
+      userId: 42,
+      params: { userId: '42' }
+    })
   })
 })
