@@ -106,10 +106,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          registry-url: https://npm.pkg.github.com
+      - uses: oven-sh/setup-bun@v2
 
       - name: Configure npm auth
         run: |
@@ -124,17 +121,42 @@ jobs:
         id: exists
         shell: bash
         run: |
-          if npm view "${{ matrix.pkg.name }}@${{ matrix.pkg.version }}" version --registry https://npm.pkg.github.com >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Already published: ${{ matrix.pkg.name }}@${{ matrix.pkg.version }}"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+          bun <<'EOF'
+          const pkgName = process.env.PKG_NAME
+          const pkgVersion = process.env.PKG_VERSION
+          const token = process.env.NODE_AUTH_TOKEN
+          const url = `https://npm.pkg.github.com/${encodeURIComponent(pkgName)}`
 
-      - name: Publish workspace
+          const res = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/vnd.npm.install-v1+json',
+            },
+          })
+
+          let exists = false
+          if (res.ok) {
+            const data = await res.json()
+            exists = Boolean(data?.versions?.[pkgVersion])
+          }
+
+          const outputPath = process.env.GITHUB_OUTPUT
+          await Bun.write(outputPath, `exists=${exists}\n`, { append: true })
+          console.log(exists
+            ? `Already published: ${pkgName}@${pkgVersion}`
+            : `Version not found yet: ${pkgName}@${pkgVersion}`)
+          EOF
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG_NAME: ${{ matrix.pkg.name }}
+          PKG_VERSION: ${{ matrix.pkg.version }}
+
+      - name: Publish workspace with Bun
         if: steps.exists.outputs.exists == 'false'
+        shell: bash
         run: |
-          npm publish --workspace "${{ matrix.pkg.workspace }}" --registry https://npm.pkg.github.com
+          cd "${{ matrix.pkg.workspace }}"
+          bun publish --registry https://npm.pkg.github.com
         env:
           NODE_AUTH_TOKEN: ${{ secrets.TOKEN }}
 
