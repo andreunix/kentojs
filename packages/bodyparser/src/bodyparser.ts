@@ -21,11 +21,36 @@ async function readBody(req: Request, limit: number, _encoding: string): Promise
   if (cl && parseInt(cl, 10) > limit) {
     throw Object.assign(new Error('Request Entity Too Large'), { status: 413, expose: true })
   }
-  const buffer = await req.arrayBuffer()
-  if (buffer.byteLength > limit) {
-    throw Object.assign(new Error('Request Entity Too Large'), { status: 413, expose: true })
+
+  if (!req.body) {
+    return ''
   }
-  return new TextDecoder().decode(buffer)
+
+  const reader = req.body.getReader()
+  let totalBytes = 0
+  const chunks: Uint8Array[] = []
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      totalBytes += value.byteLength
+      if (totalBytes > limit) {
+        throw Object.assign(new Error('Request Entity Too Large'), { status: 413, expose: true })
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  const merged = new Uint8Array(totalBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    merged.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder().decode(merged)
 }
 
 function getContentType(req: Request): string {

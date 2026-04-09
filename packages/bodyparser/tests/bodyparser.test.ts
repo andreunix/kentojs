@@ -151,3 +151,84 @@ describe('bodyParser middleware', () => {
     expect(await res.json()).toEqual({ ok: true })
   })
 })
+
+describe('Security: KSEC-2026-0003 — Body parser streaming limits', () => {
+  function makeStreamingBody(totalBytes: number, chunkSize = 256): ReadableStream<Uint8Array> {
+    let sent = 0
+    return new ReadableStream({
+      pull(controller) {
+        if (sent >= totalBytes) { controller.close(); return }
+        const size = Math.min(chunkSize, totalBytes - sent)
+        controller.enqueue(new Uint8Array(size).fill(0x61)) // 'a'
+        sent += size
+      },
+    })
+  }
+
+  it('rejects streaming JSON body without Content-Length when it exceeds the limit', async () => {
+    const app = createApp()
+    app.use(bodyParser({ jsonLimit: '100b' }))
+    app.use(async (ctx) => { ctx.body = 'ok' })
+    const res = await request(app, '/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // no Content-Length set, body is a string bigger than 100 bytes
+      body: 'a'.repeat(200),
+    })
+    expect(res.status).toBe(413)
+  })
+
+  it('rejects body when Content-Length is understated and real size exceeds limit', async () => {
+    const app = createApp()
+    app.use(bodyParser({ jsonLimit: '50b' }))
+    app.use(async (ctx) => { ctx.body = 'ok' })
+    // We send a 200-byte body but tell the client it is only 20 bytes
+    const bigBody = 'a'.repeat(200)
+    const res = await request(app, '/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': '20',
+      },
+      body: bigBody,
+    })
+    // Content-Length check passes (20 < 50), but streaming read must still stop at 50
+    expect(res.status).toBe(413)
+  })
+
+  it('enforces limit for form-encoded body without Content-Length', async () => {
+    const app = createApp()
+    app.use(bodyParser({ formLimit: '30b' }))
+    app.use(async (ctx) => { ctx.body = 'ok' })
+    const res = await request(app, '/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'key=' + 'a'.repeat(100),
+    })
+    expect(res.status).toBe(413)
+  })
+
+  it('enforces limit for text body without Content-Length', async () => {
+    const app = createApp()
+    app.use(bodyParser({ textLimit: '20b', enableTypes: ['text'] }))
+    app.use(async (ctx) => { ctx.body = 'ok' })
+    const res = await request(app, '/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: 'a'.repeat(50),
+    })
+    expect(res.status).toBe(413)
+  })
+
+  it('accepts a body exactly at the limit', async () => {
+    const app = createApp()
+    app.use(bodyParser({ textLimit: '10b', enableTypes: ['text'] }))
+    app.use(async (ctx) => { ctx.body = 'ok' })
+    const res = await request(app, '/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: 'a'.repeat(10),
+    })
+    expect(res.status).toBe(200)
+  })
+})
