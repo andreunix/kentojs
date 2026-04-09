@@ -5,6 +5,8 @@ tmp/
 *.tsbuildinfo
 *.log
 /*.md
+!README.md
+!LICENSE
 
 .env
 .env.*
