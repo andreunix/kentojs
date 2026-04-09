@@ -1,4 +1,4 @@
-import { LEVELS, levelToName, type LevelName } from './levels'
+import { LEVELS, levelToName, type LevelName } from './levels.ts'
 
 export interface LogEntry {
   level: number

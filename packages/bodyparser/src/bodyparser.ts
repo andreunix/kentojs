@@ -1,5 +1,4 @@
-import type { Middleware, KentoContext } from '@kento/core'
-import { parseBytes } from '@kento/core/src/utils'
+import { parseBytes, type Middleware, type KentoContext } from '@kento/core'
 
 export interface BodyParserOptions {
   enableTypes?: string[]
@@ -44,6 +43,11 @@ function matchesTypes(ct: string, types: string[]): boolean {
   })
 }
 
+function normalizeTypes(types: string | string[] | undefined): string[] {
+  if (!types) return []
+  return Array.isArray(types) ? types : [types]
+}
+
 export function bodyParser(options: BodyParserOptions = {}): Middleware {
   const opts = {
     enableTypes: ['json', 'form'],
@@ -73,10 +77,10 @@ export function bodyParser(options: BodyParserOptions = {}): Middleware {
       : getContentType(req)
 
     const ext = opts.extendTypes ?? {}
-    const jsonTypes = ['json', ...((ext.json ?? []) as string[])]
-    const formTypes = ['form', ...((ext.form ?? []) as string[])]
-    const textTypes = ['text', ...((ext.text ?? []) as string[])]
-    const xmlTypes  = ['xml',  ...((ext.xml  ?? []) as string[])]
+    const jsonTypes = ['json', ...normalizeTypes(ext.json)]
+    const formTypes = ['form', ...normalizeTypes(ext.form)]
+    const textTypes = ['text', ...normalizeTypes(ext.text)]
+    const xmlTypes = ['xml', ...normalizeTypes(ext.xml)]
 
     const enableTypes = opts.enableTypes
 

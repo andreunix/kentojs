@@ -1,4 +1,4 @@
-import type { Formatter, LogEntry } from './formatters'
+import type { Formatter, LogEntry } from './formatters.ts'
 
 export interface Transport {
   write(entry: LogEntry, formatted: string): void
@@ -103,7 +103,7 @@ export class FileTransport implements Transport {
 // ─── Multi transport ─────────────────────────────────────────────────────────
 // Fan-out to multiple transports. Each can have its own min level.
 
-import { LEVELS, type LevelName } from './levels'
+import { LEVELS, type LevelName } from './levels.ts'
 
 export interface MultiTransportEntry {
   transport: Transport

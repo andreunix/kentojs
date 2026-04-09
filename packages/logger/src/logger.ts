@@ -1,7 +1,7 @@
-import { LEVELS, levelForMode, nameToLevel, levelToName, type LevelName, type LevelValue } from './levels'
-import { jsonFormatter, prettyFormatter, type Formatter, type LogEntry, type PrettyOptions } from './formatters'
-import { StdoutTransport, StderrTransport, FileTransport, MultiTransport, type Transport, type MultiTransportEntry } from './transport'
-import { hostname, pid } from './env'
+import { LEVELS, levelForMode, nameToLevel, levelToName, type LevelName, type LevelValue } from './levels.ts'
+import { jsonFormatter, prettyFormatter, type Formatter, type LogEntry, type PrettyOptions } from './formatters.ts'
+import { StdoutTransport, StderrTransport, FileTransport, MultiTransport, type Transport, type MultiTransportEntry } from './transport.ts'
+import { hostname, pid } from './env.ts'
 
 // ─── Options ─────────────────────────────────────────────────────────────────
 

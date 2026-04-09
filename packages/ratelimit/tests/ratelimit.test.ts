@@ -1,18 +1,19 @@
-import { describe, it, expect, afterEach } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { Application } from '@kento/core'
 import { rateLimit } from '../src/ratelimit'
-
-let servers: any[] = []
 
 function createApp() { return new Application({ silent: true }) }
 
 async function request(app: Application, path = '/', opts: RequestInit = {}): Promise<Response> {
-  const server = app.listen(0)
-  servers.push(server)
-  return fetch(`http://localhost:${server.port}${path}`, opts)
-}
+  const handle = app.callback()
+  const server = {
+    requestIP() {
+      return { address: '127.0.0.1' }
+    }
+  } as any
 
-afterEach(() => { for (const s of servers) s.stop(); servers = [] })
+  return handle(new Request(`http://localhost${path}`, opts), server)
+}
 
 describe('rateLimit middleware', () => {
   it('should allow requests within limit', async () => {
@@ -31,13 +32,9 @@ describe('rateLimit middleware', () => {
     app.use(rateLimit({ max: 2, duration: 60000, db }))
     app.use(async (ctx) => { ctx.body = 'ok' })
 
-    const server = app.listen(0)
-    servers.push(server)
-    const url = `http://localhost:${server.port}/`
-
-    await fetch(url)
-    await fetch(url)
-    const res = await fetch(url)
+    await request(app)
+    await request(app)
+    const res = await request(app)
     expect(res.status).toBe(429)
   })
 
@@ -57,12 +54,8 @@ describe('rateLimit middleware', () => {
     app.use(rateLimit({ max: 1, duration: 60000, db }))
     app.use(async (ctx) => { ctx.body = 'ok' })
 
-    const server = app.listen(0)
-    servers.push(server)
-    const url = `http://localhost:${server.port}/`
-
-    await fetch(url)
-    const res = await fetch(url)
+    await request(app)
+    const res = await request(app)
     expect(res.status).toBe(429)
     expect(res.headers.get('retry-after')).toBeTruthy()
   })
@@ -78,13 +71,9 @@ describe('rateLimit middleware', () => {
     }))
     app.use(async (ctx) => { ctx.body = 'ok' })
 
-    const server = app.listen(0)
-    servers.push(server)
-    const url = `http://localhost:${server.port}/`
-
-    await fetch(url)
-    await fetch(url)
-    const res = await fetch(url)
+    await request(app)
+    await request(app)
+    const res = await request(app)
     expect(res.status).toBe(200)
   })
 
@@ -102,12 +91,8 @@ describe('rateLimit middleware', () => {
     app.use(rateLimit({ max: 1, duration: 60000, db, status: 503 }))
     app.use(async (ctx) => { ctx.body = 'ok' })
 
-    const server = app.listen(0)
-    servers.push(server)
-    const url = `http://localhost:${server.port}/`
-
-    await fetch(url)
-    const res = await fetch(url)
+    await request(app)
+    const res = await request(app)
     expect(res.status).toBe(503)
   })
 
@@ -133,13 +118,9 @@ describe('rateLimit middleware', () => {
     }))
     app.use(async (ctx) => { ctx.body = 'ok' })
 
-    const server = app.listen(0)
-    servers.push(server)
-    const url = `http://localhost:${server.port}/`
-
-    await fetch(url)
-    await fetch(url)
-    const res = await fetch(url)
+    await request(app)
+    await request(app)
+    const res = await request(app)
     expect(res.status).toBe(200)
   })
 })

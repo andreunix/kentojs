@@ -1,5 +1,4 @@
-import type { Middleware, KentoContext } from '@kento/core'
-import { formatMs } from '@kento/core/src/utils'
+import { formatMs, type Middleware, type KentoContext } from '@kento/core'
 
 export interface RateLimitOptions {
   driver?: 'memory'

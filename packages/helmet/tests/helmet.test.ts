@@ -1,18 +1,19 @@
-import { describe, it, expect, afterEach } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { Application } from '@kento/core'
 import { helmet } from '../src/helmet'
-
-let servers: any[] = []
 
 function createApp() { return new Application({ silent: true }) }
 
 async function request(app: Application, path = '/', opts: RequestInit = {}): Promise<Response> {
-  const server = app.listen(0)
-  servers.push(server)
-  return fetch(`http://localhost:${server.port}${path}`, opts)
-}
+  const handle = app.callback()
+  const server = {
+    requestIP() {
+      return { address: '127.0.0.1' }
+    }
+  } as any
 
-afterEach(() => { for (const s of servers) s.stop(); servers = [] })
+  return handle(new Request(`http://localhost${path}`, opts), server)
+}
 
 describe('helmet middleware', () => {
   it('should set default security headers', async () => {

@@ -1,2 +1,2 @@
-export { cors, type CorsOptions } from './cors'
-export { cors as default } from './cors'
+export { cors, type CorsOptions } from './cors.ts'
+export { cors as default } from './cors.ts'

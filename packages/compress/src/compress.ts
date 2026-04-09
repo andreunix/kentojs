@@ -1,5 +1,4 @@
-import type { Middleware } from '@kento/core'
-import { parseBytes, isCompressible, acceptsEncodings } from '@kento/core/src/utils'
+import { parseBytes, isCompressible, acceptsEncodings, type Middleware } from '@kento/core'
 
 export interface CompressOptions {
   filter?: (contentType: string) => boolean
@@ -37,6 +36,7 @@ export function compress(options: CompressOptions = {}): Middleware {
     if ((ctx as any).compress === false) return
     if (ctx.method === 'HEAD') return
     if (ctx.status === 204 || ctx.status === 304) return
+    if ((ctx as any).response.get('Content-Encoding')) return
 
     const cacheControl = (ctx as any).response.get('Cache-Control') as string
     if (cacheControl && /no-transform/i.test(cacheControl)) return

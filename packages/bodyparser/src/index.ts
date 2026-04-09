@@ -1,2 +1,2 @@
-export { bodyParser, type BodyParserOptions } from './bodyparser'
-export { bodyParser as default } from './bodyparser'
+export { bodyParser, type BodyParserOptions } from './bodyparser.ts'
+export { bodyParser as default } from './bodyparser.ts'

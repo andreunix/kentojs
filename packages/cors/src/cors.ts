@@ -1,5 +1,4 @@
-import type { Middleware, KentoContext } from '@kento/core'
-import { varyAppend } from '@kento/core/src/utils'
+import { varyAppend, type Middleware, type KentoContext } from '@kento/core'
 
 export interface CorsOptions {
   origin?: string | ((ctx: KentoContext) => string | Promise<string>)

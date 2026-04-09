@@ -130,4 +130,18 @@ describe('compress middleware', () => {
     })
     expect(res.headers.get('content-encoding')).toBeNull()
   })
+
+  it('should not recompress responses that already have Content-Encoding', async () => {
+    const app = createApp()
+    app.use(compress({ threshold: 0 }))
+    app.use(async (ctx) => {
+      ctx.type = 'text'
+      ctx.set('Content-Encoding', 'br')
+      ctx.body = 'hello world '.repeat(100)
+    })
+    const res = await request(app, '/', {
+      headers: { 'Accept-Encoding': 'gzip' }
+    })
+    expect(res.headers.get('content-encoding')).toBe('br')
+  })
 })

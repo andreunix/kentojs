@@ -1,5 +1,5 @@
 import type { Middleware, KentoContext } from '@kento/core'
-import type { Logger } from './logger'
+import type { Logger } from './logger.ts'
 
 export interface LoggerMiddlewareOptions {
   /** Custom message for the request log line */

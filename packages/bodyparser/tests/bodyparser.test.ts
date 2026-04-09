@@ -1,18 +1,19 @@
-import { describe, it, expect, afterEach } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { Application } from '@kento/core'
 import { bodyParser } from '../src/bodyparser'
-
-let servers: any[] = []
 
 function createApp() { return new Application({ silent: true }) }
 
 async function request(app: Application, path = '/', opts: RequestInit = {}): Promise<Response> {
-  const server = app.listen(0)
-  servers.push(server)
-  return fetch(`http://localhost:${server.port}${path}`, opts)
-}
+  const handle = app.callback()
+  const server = {
+    requestIP() {
+      return { address: '127.0.0.1' }
+    }
+  } as any
 
-afterEach(() => { for (const s of servers) s.stop(); servers = [] })
+  return handle(new Request(`http://localhost${path}`, opts), server)
+}
 
 describe('bodyParser middleware', () => {
   it('should parse JSON body', async () => {
@@ -113,5 +114,40 @@ describe('bodyParser middleware', () => {
     })
     const json: any = await res.json()
     expect(json.errorCaught).toBe(true)
+  })
+
+  it('should ignore text/plain when extendTypes json is provided as a string', async () => {
+    const app = createApp()
+    app.use(bodyParser({
+      enableTypes: ['json'],
+      extendTypes: { json: 'application/vnd.api+json' }
+    }))
+    app.use(async (ctx) => {
+      ctx.body = { parsed: (ctx as any).request.body ?? null }
+    })
+    const res = await request(app, '/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: 'not-json'
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ parsed: null })
+  })
+
+  it('should parse custom json content types passed as a string', async () => {
+    const app = createApp()
+    app.use(bodyParser({
+      enableTypes: ['json'],
+      extendTypes: { json: 'application/vnd.api+json' }
+    }))
+    app.use(async (ctx) => {
+      ctx.body = (ctx as any).request.body
+    })
+    const res = await request(app, '/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/vnd.api+json' },
+      body: JSON.stringify({ ok: true })
+    })
+    expect(await res.json()).toEqual({ ok: true })
   })
 })
