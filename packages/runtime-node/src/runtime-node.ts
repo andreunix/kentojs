@@ -43,23 +43,41 @@ interface NodeRequestInit extends RequestInit {
 
 const EMPTY_RESPONSE_STATUSES = new Set([204, 205, 304])
 
+const VALID_HOST_RE = /^[a-zA-Z0-9\-._\[\]:]+$/
+
 function parseHostHeader(host: string | null | undefined): string {
   if (!host) return '127.0.0.1'
+  // Strip port for validation purposes, reassemble after check
+  const hostOnly = host.split(':')[0] ?? ''
+  if (!VALID_HOST_RE.test(host) || !hostOnly) {
+    const err: NodeJS.ErrnoException = new Error('Invalid Host header')
+    ;(err as any).status = 400
+    ;(err as any).expose = true
+    throw err
+  }
   return host
 }
 
-function buildRequestUrl(req: IncomingMessage): string {
+function buildRequestUrl(req: IncomingMessage, trustProxy: boolean): string {
   const rawUrl = req.url ?? '/'
   if (/^https?:\/\//i.test(rawUrl)) return rawUrl
 
   const host = parseHostHeader(
     Array.isArray(req.headers.host) ? req.headers.host[0] : req.headers.host
   )
-  const protoHeader = Array.isArray(req.headers['x-forwarded-proto'])
-    ? req.headers['x-forwarded-proto'][0]
-    : req.headers['x-forwarded-proto']
+
   const socket = req.socket as typeof req.socket & { encrypted?: boolean }
-  const protocol = protoHeader?.split(',')[0]?.trim() || (socket.encrypted ? 'https' : 'http')
+  let protocol = socket.encrypted ? 'https' : 'http'
+
+  if (trustProxy) {
+    const protoHeader = Array.isArray(req.headers['x-forwarded-proto'])
+      ? req.headers['x-forwarded-proto'][0]
+      : req.headers['x-forwarded-proto']
+    const forwarded = protoHeader?.split(',')[0]?.trim()
+    if (forwarded === 'https' || forwarded === 'http') {
+      protocol = forwarded
+    }
+  }
 
   return new URL(rawUrl, `${protocol}://${host}`).toString()
 }
@@ -113,7 +131,7 @@ export function createRequestFromIncomingMessage(
     init.duplex = 'half'
   }
 
-  return new Request(buildRequestUrl(req), init)
+  return new Request(buildRequestUrl(req, options.trustProxy ?? false), init)
 }
 
 export async function writeResponseToServerResponse(
@@ -183,21 +201,22 @@ export class NodeRuntime {
   }
 
   async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    const request = createRequestFromIncomingMessage(req, {
-      trustProxy: this.options.trustProxy,
-    })
     const pending: Promise<unknown>[] = []
 
-    const platform: NodeRuntimePlatform = {
-      clientAddress: resolveClientAddress(req, this.options.trustProxy ?? false),
-      env: this.options.env ?? process.env,
-      waitUntil(promise: Promise<unknown>) {
-        pending.push(Promise.resolve(promise).catch(() => undefined))
-      },
-      signal: request.signal,
-    }
-
     try {
+      const request = createRequestFromIncomingMessage(req, {
+        trustProxy: this.options.trustProxy,
+      })
+
+      const platform: NodeRuntimePlatform = {
+        clientAddress: resolveClientAddress(req, this.options.trustProxy ?? false),
+        env: this.options.env ?? process.env,
+        waitUntil(promise: Promise<unknown>) {
+          pending.push(Promise.resolve(promise).catch(() => undefined))
+        },
+        signal: request.signal,
+      }
+
       const response = await this.app.fetch(request, platform)
       await writeResponseToServerResponse(response, res)
     } catch (error) {

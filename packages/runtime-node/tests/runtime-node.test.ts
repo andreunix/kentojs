@@ -195,3 +195,87 @@ describe('@kento/runtime-node', () => {
     expect(events.closeCalled).toBe(true)
   })
 })
+
+describe('Security: KSEC-2026-0001 — Proxy trust boundary', () => {
+  it('ignores x-forwarded-proto when trustProxy is false', async () => {
+    let capturedUrl = ''
+    const app: NodeFetchApp = {
+      async fetch(request) {
+        capturedUrl = request.url
+        return new Response('ok')
+      },
+    }
+    const runtime = createNodeRuntime(app, { trustProxy: false })
+    const req = createMockRequest({
+      url: '/test',
+      method: 'GET',
+      headers: {
+        host: 'example.test',
+        'x-forwarded-proto': 'https',
+      },
+    })
+    const res = createMockResponse()
+    await runtime.handleRequest(req as any, res as any)
+    // Socket is not encrypted, so protocol must be http regardless of the header
+    expect(capturedUrl).toMatch(/^http:\/\//)
+    expect(capturedUrl).not.toMatch(/^https:\/\//)
+  })
+
+  it('uses x-forwarded-proto when trustProxy is true', async () => {
+    let capturedUrl = ''
+    const app: NodeFetchApp = {
+      async fetch(request) {
+        capturedUrl = request.url
+        return new Response('ok')
+      },
+    }
+    const runtime = createNodeRuntime(app, { trustProxy: true })
+    const req = createMockRequest({
+      url: '/test',
+      method: 'GET',
+      headers: {
+        host: 'example.test',
+        'x-forwarded-proto': 'https',
+      },
+    })
+    const res = createMockResponse()
+    await runtime.handleRequest(req as any, res as any)
+    expect(capturedUrl).toMatch(/^https:\/\//)
+  })
+
+  it('returns a controlled 400 for a malformed Host header instead of crashing', async () => {
+    const app: NodeFetchApp = {
+      async fetch() {
+        return new Response('ok')
+      },
+    }
+    const runtime = createNodeRuntime(app, {})
+    const req = createMockRequest({
+      url: '/test',
+      method: 'GET',
+      headers: { host: 'bad host with spaces' },
+    })
+    const res = createMockResponse()
+    await runtime.handleRequest(req as any, res as any)
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('falls back to local socket protocol when trustProxy is true but header is absent', async () => {
+    let capturedUrl = ''
+    const app: NodeFetchApp = {
+      async fetch(request) {
+        capturedUrl = request.url
+        return new Response('ok')
+      },
+    }
+    const runtime = createNodeRuntime(app, { trustProxy: true })
+    const req = createMockRequest({
+      url: '/path',
+      method: 'GET',
+      headers: { host: 'example.test' },
+    })
+    const res = createMockResponse()
+    await runtime.handleRequest(req as any, res as any)
+    expect(capturedUrl).toMatch(/^http:\/\//)
+  })
+})
