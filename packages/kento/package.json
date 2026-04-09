@@ -1,6 +1,6 @@
 {
   "name": "kento",
-  "version": "0.1.0-beta.0",
+  "version": "0.1.0-beta.1",
   "description": "Kento - a Koa-like multi-runtime web framework (beta)",
   "type": "module",
   "main": "src/index.ts",

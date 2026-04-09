@@ -8,6 +8,22 @@ export interface KentoOptions {
   silent?: boolean
 }
 
+export type Runtime = 'node' | 'bun'
+
+export interface ServerHandle {
+  port: number
+  hostname: string
+  origin: string
+  close(): Promise<void> | void
+}
+
+export interface ListenOptions {
+  port?: number
+  hostname?: string
+  runtime?: Runtime
+  trustProxy?: boolean
+}
+
 export type Next = () => Promise<void>
 
 export type Middleware<S = DefaultState, C = DefaultContext> = (

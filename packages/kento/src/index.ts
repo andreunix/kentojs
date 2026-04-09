@@ -20,6 +20,9 @@ export type {
   DefaultState,
   DefaultContext,
   ParameterizedContext,
+  Runtime,
+  ServerHandle,
+  ListenOptions,
 } from '@kento/core'
 export type {
   RouterOptions,
@@ -47,6 +50,7 @@ export type {
 } from '@kento/runtime-node'
 
 import { Application } from '@kento/core'
+import type { Runtime, ListenOptions, ServerHandle } from '@kento/core'
 import { Router } from '@kento/router'
 import { cors } from '@kento/cors'
 import { bodyParser } from '@kento/bodyparser'
@@ -56,6 +60,26 @@ import { rateLimit } from '@kento/ratelimit'
 import { createLogger, Logger, loggerMiddleware } from '@kento/logger'
 import { BunRuntimeApp, createBunRuntime, listen as listenBun } from '@kento/runtime-bun'
 import { NodeRuntime, createNodeRuntime, listen as listenNode } from '@kento/runtime-node'
+
+// Register the built-in runtime adapters
+Application._runtimeRegistry = async (
+  runtime: Runtime,
+  app: Application,
+  options: ListenOptions
+): Promise<ServerHandle> => {
+  if (runtime === 'bun') {
+    return listenBun(app, {
+      port: options.port,
+      hostname: options.hostname,
+    }) as unknown as ServerHandle
+  }
+  // default: node
+  return listenNode(app, {
+    port: options.port,
+    hostname: options.hostname,
+    trustProxy: options.trustProxy,
+  })
+}
 
 export default class Kento extends Application {
   static Router = Router

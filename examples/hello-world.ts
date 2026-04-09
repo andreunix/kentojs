@@ -5,7 +5,6 @@ import Kento, {
   helmet,
   compress,
   rateLimit,
-  listenBun,
   loggerMiddleware,
 } from 'kento'
 import type { RouterContext } from 'kento'
@@ -23,7 +22,7 @@ app.use(bodyParser({ enableTypes: ['json', 'form'] }))
 app.use(loggerMiddleware(logger))
 
 router.get('/', (ctx: RouterContext) => {
-  ctx.body = { message: 'Hello from Kento!', version: '0.1.0' }
+  ctx.body = { message: 'Hello from Kento!', version: '0.1.0-beta.1' }
 })
 
 router.get('/users/:id', (ctx: RouterContext) => {
@@ -37,6 +36,6 @@ router.post('/echo', (ctx: RouterContext) => {
 app.use(router.routes())
 app.use(router.allowedMethods())
 
-const server = listenBun(app, { port })
+const server = await app.listen({ port, runtime: 'bun' })
 
 console.log(`Kento running on ${server.origin}`)

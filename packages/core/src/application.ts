@@ -11,6 +11,9 @@ import type {
   DefaultState,
   DefaultContext,
   KentoPlatform,
+  Runtime,
+  ServerHandle,
+  ListenOptions,
 } from './types.ts'
 
 type LegacyRuntimeLike = {
@@ -47,6 +50,22 @@ export class Application<
   response: Record<string, unknown>
 
   static HttpError = HttpError
+
+  static _runtimeRegistry?: (
+    runtime: Runtime,
+    app: Application,
+    options: ListenOptions
+  ) => Promise<ServerHandle>
+
+  async listen(options: ListenOptions = {}): Promise<ServerHandle> {
+    if (!Application._runtimeRegistry) {
+      throw new Error(
+        'No runtime available. Import "kento" instead of "@kento/core" to use app.listen(), ' +
+        'or set Application._runtimeRegistry manually.'
+      )
+    }
+    return Application._runtimeRegistry(options.runtime ?? 'node', this, options)
+  }
 
   constructor(options: KentoOptions = {}) {
     super()
