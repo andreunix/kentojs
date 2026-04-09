@@ -1,6 +1,6 @@
 {
   "name": "@kento/runtime-node",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.0",
   "description": "Node runtime adapter for Kento Fetch-based apps",
   "type": "module",
   "main": "src/index.ts",

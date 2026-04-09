@@ -1,6 +1,6 @@
 {
   "name": "@kento/bodyparser",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.0",
   "description": "Body parser middleware for Kento — zero external deps",
   "type": "module",
   "main": "src/index.ts",

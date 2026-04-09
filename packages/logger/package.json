@@ -1,6 +1,6 @@
 {
   "name": "@kento/logger",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.0",
   "description": "Structured logger for Kento — zero external deps, Pino-inspired",
   "type": "module",
   "main": "src/index.ts",

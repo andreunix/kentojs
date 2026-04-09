@@ -1,7 +1,7 @@
 {
   "name": "@kento/core",
-  "version": "0.1.0",
-  "description": "Core framework primitives for Kento — Bun first, zero external deps",
+  "version": "0.1.0-beta.0",
+  "description": "Core framework primitives for Kento — multi-runtime beta",
   "type": "module",
   "main": "src/index.ts",
   "module": "src/index.ts",

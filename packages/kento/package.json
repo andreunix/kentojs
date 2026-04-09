@@ -1,7 +1,7 @@
 {
   "name": "kento",
-  "version": "0.1.0",
-  "description": "Kento – a Koa-like framework for Bun, zero external deps",
+  "version": "0.1.0-beta.0",
+  "description": "Kento - a Koa-like multi-runtime web framework (beta)",
   "type": "module",
   "main": "src/index.ts",
   "module": "src/index.ts",

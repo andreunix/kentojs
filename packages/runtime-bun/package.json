@@ -1,6 +1,6 @@
 {
   "name": "@kento/runtime-bun",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.0",
   "description": "Bun runtime adapter for Kento applications",
   "type": "module",
   "main": "src/index.ts",
