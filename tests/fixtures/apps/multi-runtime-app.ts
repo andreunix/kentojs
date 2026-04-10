@@ -8,6 +8,24 @@ export function createMultiRuntimeApp(): Application {
   const app = new Application({ proxy: true, silent: true })
   const router = new Router()
 
+  function sanitizeBody(value: unknown): unknown {
+    if (typeof value === 'string') {
+      return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+    }
+    if (Array.isArray(value)) return value.map(sanitizeBody)
+    if (typeof value === 'object' && value !== null) {
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, sanitizeBody(v)])
+      )
+    }
+    return value
+  }
+
   app.use(helmet())
   app.use(cors({
     origin: 'https://client.example',
@@ -34,7 +52,7 @@ export function createMultiRuntimeApp(): Application {
 
   router.post('/echo', (ctx: RouterContext) => {
     ctx.body = {
-      received: (ctx.request as any).body ?? null
+      received: sanitizeBody((ctx.request as any).body) ?? null
     }
   })
 

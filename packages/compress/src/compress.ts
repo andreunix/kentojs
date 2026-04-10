@@ -57,6 +57,9 @@ export function compress(options: CompressOptions = {}): Middleware {
 
     const encoding = acceptsEncodings(acceptEncoding, ...available)
     if (!encoding || encoding === 'identity') return
+    
+    // Validate encoding is one of the allowed types
+    if (typeof encoding !== 'string' || !['gzip', 'deflate'].includes(encoding)) return
 
     ctx.vary('Accept-Encoding')
 
@@ -83,7 +86,7 @@ export function compress(options: CompressOptions = {}): Middleware {
     // For streaming/blob bodies, use web CompressionStream
     if (body instanceof ReadableStream || body instanceof Blob) {
       const sourceStream = body instanceof Blob ? body.stream() : body
-      const compressed = sourceStream.pipeThrough(new CompressionStream(encoding as 'gzip' | 'deflate'))
+      const compressed = sourceStream.pipeThrough(new CompressionStream(encoding as 'gzip' | 'deflate', {}))
       ctx.set('Content-Encoding', encoding as string)
       ctx.remove('Content-Length')
       ;(ctx as any).body = compressed
@@ -108,8 +111,9 @@ export function compress(options: CompressOptions = {}): Middleware {
       }
       ctx.set('Content-Encoding', encoding as string)
       ctx.remove('Content-Length')
-      ;(ctx as any).body = Buffer.from(compressed)
-      ctx.set('Content-Length', String(compressed.length))
+      const compressedBuffer = Buffer.from(compressed)
+      ;(ctx as any).body = compressedBuffer
+      ctx.set('Content-Length', String(compressedBuffer.length))
     }
   }
 }

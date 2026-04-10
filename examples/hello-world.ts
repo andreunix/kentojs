@@ -12,6 +12,7 @@ import type { RouterContext } from 'kento'
 const port = Number(process.env.PORT ?? 3000)
 const app = new Kento({ proxy: true })
 const router = new Router()
+
 const logger = Kento.createLogger({ level: 'debug' })
 
 app.use(helmet())
@@ -30,7 +31,7 @@ router.get('/users/:id', (ctx: RouterContext) => {
 })
 
 router.post('/echo', (ctx: RouterContext) => {
-  ctx.body = { received: (ctx.request as any).body }
+  ctx.body = { received: true }
 })
 
 app.use(router.routes())

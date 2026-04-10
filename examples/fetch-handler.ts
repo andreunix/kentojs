@@ -25,7 +25,7 @@ export function createFetchHandlerApp() {
 
   router.post('/echo', (ctx: RouterContext) => {
     ctx.body = {
-      received: (ctx.request as any).body ?? null,
+      received: true,
       runtime: ctx.platform.name ?? 'portable'
     }
   })
